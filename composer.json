@@ -1,0 +1,14 @@
+{
+    "require": {
+        "silex/silex": "~1.3",
+        "gabordemooij/redbean": "^4.2",
+        "symfony/security": "^2.7",
+        "cnam/security-jwt-service-provider": "1.*",
+        "monolog/monolog": "^1.17"
+    },
+    "autoload": {
+        "psr-4": {
+            "Bigfiche\\": "src/"
+        }
+    }
+}
