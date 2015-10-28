@@ -17,10 +17,10 @@ class Member extends Bigfiche\RedBeanModel {
      * @return integer or false
      * 
      */
-    public function add(array $params) {
+    public function add(array $params, $creationDateFieldName = "created", $activeFieldName = "active") {
         // add tests before add if () {
         // }else{
-            return $this->_add($params);
+            return $this->__add($params, $creationDateFieldName, $activeFieldName);
         //}
     }
         
@@ -34,10 +34,10 @@ class Member extends Bigfiche\RedBeanModel {
      * @return boolean
      * 
      */
-    public function update($id, array $params) {
+    public function update($id, array $params, $updateDateFieldName = "updated") {
         // add tests before update if () {
         // }else{
-            return $this->_update($id, $params);
+            return $this->__update($id, $params, $updateDateFieldName);
         //}
     }
         
@@ -51,7 +51,7 @@ class Member extends Bigfiche\RedBeanModel {
     public function delete($id) {
         // add tests before delete if () {
         // }else{
-            return $this->_dete($id);
+            return $this->__delete($id);
         //}
     }
         

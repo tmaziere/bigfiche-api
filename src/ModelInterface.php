@@ -19,12 +19,16 @@ interface ModelInterface
             
     public function getJoinList(array $data, $targetJoinTable, $targetFields = null);
 
-    public function _add(array $params);
+    public function __add(array $params, $creationDateFieldName, $activeFieldName);
     
-    public function _update($id, array $params);
+    public function __update($id, array $params, $updateDateFieldName);
     
-    public function _delete($id);
+    public function __delete($id);
     
+    public function deactivate($id, $activeFieldName, $deactivateDateFieldName);
+
+    public function reactivate($id, $activeFieldName, $deactivateDateFieldName);
+
     public function isExistColumn($columnName);
     
     public function getColumnList();

@@ -34,6 +34,9 @@ class RedBeanModel implements ModelInterface
     public function getCount($whereClause = null) {
         try {
             return R::count($this->table, $whereClause);
+        } catch (RedBeanPHP\RedException\SQL $res) {
+            new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
+            return false;
         } catch (Exception $e) {
             new \Exception('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $e->getMessage());
             return false;
@@ -67,7 +70,11 @@ class RedBeanModel implements ModelInterface
                     $query .= ' OFFSET ' . $args['offset'];
                 }
             }
-            return R::getAll($query);
+            $result = R::getAll($query);
+            return count($result)>0 ? $result[0] : false;
+        } catch (RedBeanPHP\RedException\SQL $res) {
+            new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
+            return false;
         } catch (Exception $e) {
             new \Exception('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $e->getMessage());
             return false;
@@ -91,8 +98,10 @@ class RedBeanModel implements ModelInterface
             $query .= ' FROM ' . $this->table;
             $query .= ' WHERE id = ' . $id;
             $result = R::getAll($query);
-            //$this->loadBean(reset(R::convertToBeans($this->table, $result)));
-            return $result;
+            return count($result)>0 ? $result[0] : false;
+        } catch (RedBeanPHP\RedException\SQL $res) {
+            new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
+            return false;
         } catch (Exception $e) {
             new \Exception('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $e->getMessage());
             return false;
@@ -121,6 +130,9 @@ class RedBeanModel implements ModelInterface
                 }
             }
             return $result;
+        } catch (RedBeanPHP\RedException\SQL $res) {
+            new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
+            return false;
         } catch (Exception $e) {
             new \Exception('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $e->getMessage());
             return false;
@@ -132,11 +144,12 @@ class RedBeanModel implements ModelInterface
      * Add one record in the table
      * 
      * @param array $params
-     * 
+     * @param string $creationDateFieldName Name of the field used for date of record creation (default = "created", 0 if no field)
+     * @param string $activeFieldName Name of the field used for boolean active record information (default = "active", 0 if no field)
      * @return integer or false
      * 
      */
-    public function _add(array $params) {
+    public function __add(array $params, $creationDateFieldName = "created", $activeFieldName = "active") {
         if (!is_array($params) || !isset($params['data']) || sizeof($params['data']) < 1) {
             return false;
         }
@@ -147,6 +160,8 @@ class RedBeanModel implements ModelInterface
                     $bean->$name = $value;
                 }
             }
+            if ($creationDateFieldName !== 0) $bean->$creationDateFieldName = new \DateTime( 'now' );
+            if ($activeFieldName !== 0) $bean->$activeFieldName = 1;
             return R::store($bean);
         } catch (RedBeanPHP\RedException\SQL $res) {
             new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
@@ -163,21 +178,24 @@ class RedBeanModel implements ModelInterface
      * 
      * @param integer $id
      * @param array $params
+     * @param string $updateDateFieldName Name of the field used for date of record update (default = "updated", 0 if no field)
      * 
      * @return boolean
      * 
      */
-    public function _update($id, array $params) {
+    public function __update($id, array $params, $updateDateFieldName = "updated") {
         if (!is_numeric($id) || !is_array($params) || !isset($params['data']) || sizeof($params['data']) < 1) {
             return false;
         }
         try {
             $bean = R::load($this->table, $id);
+            if ($bean->id === 0) return false;
             foreach ($params['data'] as $name => $value) {
                 if ($this->isExistColumn($name)) {
                     $bean->$name = $value;
                 }
             }
+            $bean->$updateDateFieldName = new \DateTime( 'now' );
             return R::store($bean);
         } catch (RedBeanPHP\RedException\SQL $res) {
             new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
@@ -195,14 +213,75 @@ class RedBeanModel implements ModelInterface
      * @param integer $id
      * @return boolean
      */
-    public function _delete($id) {
+    public function __delete($id) {
         if (!is_numeric($id)) {
             return false;
         }
         try {
             $bean = R::load($this->table, $id);
+            if ($bean->id === 0) return false;
             R::trash($bean);
             return true;
+        } catch (RedBeanPHP\RedException\SQL $res) {
+            new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
+            return false;
+        } catch (Exception $e) {
+            new \Exception('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 
+     * Deactivate one record in the table
+     * 
+     * @param integer $id
+     * @param string $activeFieldName Name of the field used for boolean active record information (default = "active", 0 if no field)
+     * @param string $deactivateDateFieldName Name of the field used for date of deactivation (default = "deactivated", 0 if no field)
+     * 
+     * @return boolean
+     * 
+     */
+    public function deactivate($id, $activeFieldName = "active", $deactivateDateFieldName = "deactivated") {
+        if (!is_numeric($id)) {
+            return false;
+        }
+        try {
+            $bean = R::load($this->table, $id);
+            if ($bean->id === 0) return false;
+            $bean->$activeFieldName = 0;
+            $bean->$deactivateDateFieldName = new \DateTime( 'now' );
+            return R::store($bean);
+        } catch (RedBeanPHP\RedException\SQL $res) {
+            new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
+            return false;
+        } catch (Exception $e) {
+            new \Exception('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 
+     * Reactivate one record in the table
+     * 
+     * @param integer $id
+     * @param string $activeFieldName Name of the field used for boolean active record information (default = "active", 0 if no field)
+     * @param string $deactivateDateFieldName Name of the field used for date of deactivation (default = "deactivated", 0 if no field)
+     * 
+     * @return boolean
+     * 
+     */
+    public function reactivate($id, $activeFieldName = "active", $deactivateDateFieldName = "deactivated") {
+        if (!is_numeric($id)) {
+            return false;
+        }
+        try {
+            $bean = R::load($this->table, $id);
+            if ($bean->id === 0) return false;
+            $bean->$activeFieldName = 1;
+            $bean->$deactivateDateFieldName = null;
+            return R::store($bean);
         } catch (RedBeanPHP\RedException\SQL $res) {
             new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
             return false;
