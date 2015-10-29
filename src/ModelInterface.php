@@ -7,7 +7,7 @@ use Silex\Application;
 interface ModelInterface
 {
 
-    public function __construct(Application $app);
+    public function __construct(Application $app, $creationDateFieldName, $updateDateFieldName, $activeFieldName, $deactivationDateFieldName);
     
     public function getCount($whereClause = null);
     
@@ -19,15 +19,15 @@ interface ModelInterface
             
     public function getJoinList(array $data, $targetJoinTable, $targetFields = null);
 
-    public function __add(array $params, $creationDateFieldName, $activeFieldName);
+    public function __add(array $params);
     
-    public function __update($id, array $params, $updateDateFieldName);
+    public function __update($id, array $params);
     
     public function __delete($id);
     
-    public function deactivate($id, $activeFieldName, $deactivateDateFieldName);
+    public function deactivate($id);
 
-    public function reactivate($id, $activeFieldName, $deactivateDateFieldName);
+    public function reactivate($id);
 
     public function isExistColumn($columnName);
     

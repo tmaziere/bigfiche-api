@@ -11,16 +11,31 @@ class RedBeanModel implements ModelInterface
 
     protected $app = null;
     protected $table = null;
+    protected $_creationDateFieldName = null;
+    protected $_updateDateFieldName = null;
+    protected $_activeFieldName = null;
+    protected $_deactivationDateFieldName = null;
     
     /**
      * Instantiate a new Model from a table
      * 
      * table is set from the last part of class namespace definition with substracting 'Model'
+     *
+     * @param Application $app Silex application reference
+     * @param string $creationDateFieldName Name of the field used for date of record creation (default = "created", 0 if no field)
+     * @param string $updateDateFieldName Name of the field used for date of record update (default = "updated", 0 if no field)
+     * @param string $activeFieldName Name of the field used for boolean active record information (default = "active", 0 if no field)
+     * @param string $deactivationDateFieldName Name of the field used for date of deactivation (default = "deactivated", 0 if no field)
+     *      
      */
-    public function __construct(Application $app) {
+    public function __construct(Application $app, $creationDateFieldName = "created", $updateDateFieldName = "updated", $activeFieldName = "active", $deactivationDateFieldName = "deactivated") {
         $this->app = $app;
 	$class_explode = explode('\\',get_class($this));
         $this->table = lcfirst($class_explode[count($class_explode,0)-1]);
+        if ($creationDateFieldName !== 0) $this->_creationDateFieldName = $creationDateFieldName;
+        if ($updateDateFieldName !== 0) $this->_updateDateFieldName = $updateDateFieldName;
+        if ($activeFieldName !== 0) $this->_activeFieldName = $activeFieldName;
+        if ($deactivationDateFieldName !== 0) $this->_deactivationDateFieldName = $deactivationDateFieldName;
     }
 
     /**
@@ -144,12 +159,10 @@ class RedBeanModel implements ModelInterface
      * Add one record in the table
      * 
      * @param array $params
-     * @param string $creationDateFieldName Name of the field used for date of record creation (default = "created", 0 if no field)
-     * @param string $activeFieldName Name of the field used for boolean active record information (default = "active", 0 if no field)
      * @return integer or false
      * 
      */
-    public function __add(array $params, $creationDateFieldName = "created", $activeFieldName = "active") {
+    public function __add(array $params) {
         if (!is_array($params) || !isset($params['data']) || sizeof($params['data']) < 1) {
             return false;
         }
@@ -160,8 +173,10 @@ class RedBeanModel implements ModelInterface
                     $bean->$name = $value;
                 }
             }
-            if ($creationDateFieldName !== 0) $bean->$creationDateFieldName = new \DateTime( 'now' );
-            if ($activeFieldName !== 0) $bean->$activeFieldName = 1;
+            $creationDateFieldName = $this->_creationDateFieldName;
+            $activeFieldName = $this->_activeFieldName;
+            if ($creationDateFieldName !== null) $bean->$creationDateFieldName = new \DateTime( 'now' );
+            if ($activeFieldName !== null) $bean->$activeFieldName = 1;
             return R::store($bean);
         } catch (RedBeanPHP\RedException\SQL $res) {
             new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
@@ -178,12 +193,11 @@ class RedBeanModel implements ModelInterface
      * 
      * @param integer $id
      * @param array $params
-     * @param string $updateDateFieldName Name of the field used for date of record update (default = "updated", 0 if no field)
      * 
      * @return boolean
      * 
      */
-    public function __update($id, array $params, $updateDateFieldName = "updated") {
+    public function __update($id, array $params) {
         if (!is_numeric($id) || !is_array($params) || !isset($params['data']) || sizeof($params['data']) < 1) {
             return false;
         }
@@ -195,7 +209,8 @@ class RedBeanModel implements ModelInterface
                     $bean->$name = $value;
                 }
             }
-            $bean->$updateDateFieldName = new \DateTime( 'now' );
+            $updateDateFieldName = $this->_updateDateFieldName;
+            if ($updateDateFieldName !== null) $bean->$updateDateFieldName = new \DateTime( 'now' );
             return R::store($bean);
         } catch (RedBeanPHP\RedException\SQL $res) {
             new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
@@ -236,21 +251,21 @@ class RedBeanModel implements ModelInterface
      * Deactivate one record in the table
      * 
      * @param integer $id
-     * @param string $activeFieldName Name of the field used for boolean active record information (default = "active", 0 if no field)
-     * @param string $deactivateDateFieldName Name of the field used for date of deactivation (default = "deactivated", 0 if no field)
      * 
      * @return boolean
      * 
      */
-    public function deactivate($id, $activeFieldName = "active", $deactivateDateFieldName = "deactivated") {
+    public function deactivate($id) {
         if (!is_numeric($id)) {
             return false;
         }
         try {
             $bean = R::load($this->table, $id);
             if ($bean->id === 0) return false;
-            $bean->$activeFieldName = 0;
-            $bean->$deactivateDateFieldName = new \DateTime( 'now' );
+            $activeFieldName = $this->_activeFieldName;
+            $deactivationDateFieldName = $this->_deactivationDateFieldName;
+            if($activeFieldName !== null) $bean->$activeFieldName = 0;
+            if($deactivationDateFieldName !== null) $bean->$deactivationDateFieldName = new \DateTime( 'now' );
             return R::store($bean);
         } catch (RedBeanPHP\RedException\SQL $res) {
             new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
@@ -266,21 +281,21 @@ class RedBeanModel implements ModelInterface
      * Reactivate one record in the table
      * 
      * @param integer $id
-     * @param string $activeFieldName Name of the field used for boolean active record information (default = "active", 0 if no field)
-     * @param string $deactivateDateFieldName Name of the field used for date of deactivation (default = "deactivated", 0 if no field)
      * 
      * @return boolean
      * 
      */
-    public function reactivate($id, $activeFieldName = "active", $deactivateDateFieldName = "deactivated") {
+    public function reactivate($id) {
         if (!is_numeric($id)) {
             return false;
         }
         try {
             $bean = R::load($this->table, $id);
             if ($bean->id === 0) return false;
-            $bean->$activeFieldName = 1;
-            $bean->$deactivateDateFieldName = null;
+            $activeFieldName = $this->_activeFieldName;
+            $deactivationDateFieldName = $this->_deactivationDateFieldName;
+            if($activeFieldName !== null) $bean->$activeFieldName = 1;
+            if($deactivationDateFieldName !== null) $bean->$deactivationDateFieldName = null;
             return R::store($bean);
         } catch (RedBeanPHP\RedException\SQL $res) {
             new RedBeanPHP\RedException\SQL('Error ' . __CLASS__ . '::' . __METHOD__ . ' > ' . $res);
