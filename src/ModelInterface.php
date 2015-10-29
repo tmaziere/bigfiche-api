@@ -9,7 +9,7 @@ interface ModelInterface
 
     public function __construct(Application $app, $creationDateFieldName, $updateDateFieldName, $activeFieldName, $deactivationDateFieldName);
     
-    public function getCount($whereClause = null);
+    public function getCount($whereClause = null, $onlyActive = true);
     
     public function getAll($targetFields = null, $args = []);
     
@@ -19,11 +19,11 @@ interface ModelInterface
             
     public function getJoinList(array $data, $targetJoinTable, $targetFields = null);
 
-    public function __add(array $params);
+    public function add(array $params);
     
-    public function __update($id, array $params);
+    public function update($id, array $params);
     
-    public function __delete($id);
+    public function delete($id);
     
     public function deactivate($id);
 

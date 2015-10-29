@@ -20,7 +20,7 @@ class Member extends Bigfiche\RedBeanModel {
     public function add(array $params) {
         // add tests before add if () {
         // }else{
-            return $this->__add($params);
+            return parent::add($params);
         //}
     }
         
@@ -37,7 +37,7 @@ class Member extends Bigfiche\RedBeanModel {
     public function update($id, array $params) {
         // add tests before update if () {
         // }else{
-            return $this->__update($id, $params);
+            return parent::update($id, $params);
         //}
     }
         
@@ -51,7 +51,7 @@ class Member extends Bigfiche\RedBeanModel {
     public function delete($id) {
         // add tests before delete if () {
         // }else{
-            return $this->__delete($id);
+            return parent::delete($id);
         //}
     }
         
